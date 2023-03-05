@@ -1,5 +1,6 @@
-const SpeechRecognition = window.SpeechRecognition || webkitSpeechRecognition
-const speech = document.querySelector("h1")
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+const voices = speechSynthesis.getVoices() || []
+const speech = document.querySelector(".output")
 const quickResponses = [
     'At your service, sir',
     'Yes?',
@@ -23,29 +24,29 @@ const months = [
     "December"
 ]
 
-var recognition = new SpeechRecognition()
-
-recognition.lang =  localStorage.getItem('lang') || 'en'
+const recognition = new SpeechRecognition()
+recognition.lang = 'en-US'
 
 recognition.addEventListener('result', async function (e) {
 
     sentence = e.results[0][0].transcript
-    speech.innerText = sentence
     let lowerSentence = sentence.toLowerCase()
+    
+    speech.innerText = lowerSentence.replace(botName[0].toLowerCase(), botName[1])
+    // let reg = new RegExp(botName[0], "ig");
+    // speech.innerText = sentence.replace(reg, botName[1])
 
     if (jarvis == true) {
         jarvis = false
-
         jarvisRecognition(lowerSentence)
     } 
 
-    // else if (sentence.includes('Jarvis')) {
-    else if (lowerSentence.includes(botName.toLowerCase())) {
-        let fullSentence = sentence.split(' ')
+    else if (lowerSentence.includes(botName[0].toLowerCase())) {
+        let fullSentence = lowerSentence.split(' ')
 
         if (fullSentence[1]) {
-            // let command = (fullSentence.slice(fullSentence.indexOf("Jarvis") + 1)).join(' ').toLowerCase()
-            let command = (fullSentence.slice(fullSentence.indexOf(botName) + 1)).join(' ').toLowerCase()
+            let command = (fullSentence.slice(fullSentence.indexOf(botName[0].toLowerCase()) + 1)).join(' ').toLowerCase()
+
             if (command) {
                 jarvisRecognition(command)
                 return
@@ -56,8 +57,6 @@ recognition.addEventListener('result', async function (e) {
 
         jarvisSpeech(text, 0.8, 0.2, 1, 'en')
         jarvis = true
-
-        speech.innerText = sentence.replace(/[Jj]arvis/g, "J.A.R.V.I.S")
     }
 })
 
@@ -66,7 +65,7 @@ function checkSpeechSynthesis(i) {
         let delay = i > 0 ? 50 : 500
 
         setTimeout(() => {
-            if (!window.speechSynthesis.speaking) {
+            if (!speechSynthesis.speaking) {
                 recognition.start()
             } else {
                 i++
@@ -74,6 +73,16 @@ function checkSpeechSynthesis(i) {
             }
         }, delay)
     }
+}
+
+function updateVoices() {
+    jarvisSpeech('', 0.8, 0.2, 1, 'en')
+
+    voices.forEach((v, i) => {
+        if (v.lang != 'en-US') {
+            voices.splice(i, 1)
+        }
+    })
 }
 
 recognition.addEventListener('end', () => {

@@ -1,3 +1,5 @@
+const submitBtn = document.querySelector(".submit")
+const talkText = document.querySelector("#talk")
 let botName = JSON.parse(localStorage.getItem('botName')) || ['Jarvis', 'J.A.R.V.I.S']
 let voice = localStorage.getItem('voice') || 0
 let sleeping = true
@@ -30,22 +32,29 @@ async function jarvisRecognition(lowerSentence) {
         }, 3000) 
     }
     else if (lowerSentence.startsWith('change your name to')) {
-        let newName = /change your name to\s+(.+)/g.exec(lowerSentence)[1]
+        let newName = /change your name to\s+(.+)/g.exec(lowerSentence)
 
-        if (newName.includes(' ')) {
-            text = 'The name needs to be a single word!'
+        if (newName) {
+            newName = newName[1]
+            if (newName.includes(' ')) {
+                text = 'The name needs to be a single word!'
+                jarvisSpeech(text, 0.8, 0.2, 1, 'en')
+                return
+            }
+    
+            botName[0] = /change your name to\s+(.+)/g.exec(lowerSentence)[1]
+            botName[1] = botName[0].toUpperCase().split('').join('.')
+            text = "As you wish, sir! My new name is " + botName[0]
             jarvisSpeech(text, 0.8, 0.2, 1, 'en')
-            return
+    
+            localStorage.setItem('botName', JSON.stringify(botName))
+            initialization.querySelector('h1').innerHTML = botName[1]
+            document.querySelector('title').innerText = botName[1]
+        } else {
+            text = "No name provided to change to!"
+            jarvisSpeech(text, 0.8, 0.2, 1, 'en')
         }
-
-        botName[0] = /change your name to\s+(.+)/g.exec(lowerSentence)[1]
-        botName[1] = botName[0].toUpperCase().split('').join('.')
-        text = "As you wish, sir! My new name is " + botName[0]
-        jarvisSpeech(text, 0.8, 0.2, 1, 'en')
-
-        localStorage.setItem('botName', JSON.stringify(botName))
-        initialization.querySelector('h1').innerHTML = botName[1]
-        document.querySelector('title').innerText = botName[1]
+        
     }
     else if (lowerSentence.includes('create window') || lowerSentence.includes('open window')) {
         text = 'It will be done, my lord.'
@@ -53,17 +62,25 @@ async function jarvisRecognition(lowerSentence) {
 
         window.open('https://www.google.com')
     }
-    else if (lowerSentence.startsWith('change voice to')) { // can be improved
+    else if (lowerSentence.startsWith('change voice to') || lowerSentence.startsWith('change your voice to')) { 
         if (voices[0]) {
-            let search = /change voice to\s+(.+)/g.exec(lowerSentence)[1]
-            search = numbers[search] || search
+            let search = /change voice to\s+(.+)/g.exec(lowerSentence)
 
-            if (voices[search]) {
-                voice = search
-                text = `Okay, my new voice is ${voices[search].name}`
-                jarvisSpeech(text, 0.8, 0.2, 1, 'en')
+            if (search) {
+                search = search[1]
+
+                search = numbers[search] || search
+
+                if (voices[search]) {
+                    voice = search
+                    text = `Okay, my new voice is ${voices[search].name}`
+                    jarvisSpeech(text, 0.8, 0.2, 1, 'en')
+                } else {
+                    text = `Voice index out of range`
+                    jarvisSpeech(text, 0.8, 0.2, 1, 'en')
+                }
             } else {
-                text = `Voice index out of range`
+                text = `No voice number provided`
                 jarvisSpeech(text, 0.8, 0.2, 1, 'en')
             }
         } else {
@@ -77,11 +94,24 @@ async function jarvisRecognition(lowerSentence) {
         jarvisSpeech(text, 0.8, 0.2, 1, 'en')
     } 
     else if (lowerSentence.startsWith('search')) {
-        let search = /search\s+(.+)/g.exec(lowerSentence)[1]
+        let search = /search\s+(.+)/g.exec(lowerSentence)
+
+        if (!search) {
+            text = "No search terms provided"
+            jarvisSpeech(text, 0.8, 0.2, 1, 'en')
+            return
+        }
+
         text = "Can do, sir!"
         jarvisSpeech(text, 0.8, 0.2, 1, 'en')
-        window.open(`https://www.google.com/search?q=${search}`)
-    } 
+        window.open(`https://www.google.com/search?q=${search[1]}`)
+    }  
+    else if (lowerSentence.endsWith('documentation')) {
+        text = "Opening documentation"
+        jarvisSpeech(text, 0.8, 0.2, 1, 'en')
+        
+        window.open("documentation.html", "_self")
+    }
     else if (lowerSentence.startsWith('open')) {
         let search = /open\s+(.+)/g.exec(lowerSentence)[1]
         text = "Opening " + search
@@ -89,6 +119,9 @@ async function jarvisRecognition(lowerSentence) {
         
         search = search.replaceAll(' ', '')
         window.open(`https://www.${search}.com`)
+    }
+    else if (lowerSentence.startsWith('refresh page')) {
+        location.reload()
     }
     else if (lowerSentence.startsWith('convert')) {
         let search = [/convert\s+\$?(\d+)\s+(\w+)\s+\w+\s+(.+)/g.exec(lowerSentence)]
@@ -98,7 +131,9 @@ async function jarvisRecognition(lowerSentence) {
         search[0] = search[0][1] // Value
 
         convertCurrency(search[0], search[1], search[2])
-    } 
+
+        return
+    }
 
     // Fun
 
@@ -109,19 +144,29 @@ async function jarvisRecognition(lowerSentence) {
         jarvisSpeech(text, 0.8, 0.2, 1, 'en')
 
         setTimeout(() => {explosion.play()}, 8000)
+        setTimeout(() => {
+            let new_window = open(location, '_self')
+            new_window.close('','_parent','')
+        }, 9500)
     }
     else if (lowerSentence.includes('joke')) {
         fetch (jokeURL)
             .then(response => response.json())
             .then(data => {
-                console.log(data)
+                console.log(data.setup, data.delivery)
                 text = data.setup
                 jarvisSpeech(text, 0.8, 0.2, 1, 'en')
 
                 text = data.delivery
                 jarvisSpeech(text, 0.8, 0.2, 1, 'en')
+                
+                speech.innerHTML = data.setup + " <br> " + data.delivery
+            })
+            .catch(error => {
+                console.log(error)
             })
         
+        return
     }
     else if (lowerSentence.includes('herobrine')) {
         text = 'herobrine herobrine herobrine herobrine herobrine herobrine herobrine AAAAAAAAAAaaaaaaaaaaaaaaAAAAAAAAAAAaaaaaaaaa'
@@ -138,11 +183,20 @@ async function jarvisRecognition(lowerSentence) {
         setTimeout(() => {signature.play()}, 3000)
     }
     else if (lowerSentence.includes('stop signature')) {
-        text = 'Stoping song'
+        text = 'Stopping song'
         jarvisSpeech(text, 0.8, 0.2, 1, 'en')
 
         signature.pause()
         signature.currentTime = 0
+    }
+    else if (lowerSentence.includes('this is the way') || lowerSentence.includes('mando') || lowerSentence.includes("mandalorian")) {
+        // mando = Math.random() > 0.5 ? new Audio("./assets/mandalorian/mando.mp3") : new Audio("./assets/mandalorian/mando_omeagle.mp3")
+        mando = new Audio("./assets/mandalorian/mando.mp3")
+        mando.play()
+
+        text = 'This is the way'
+
+        setTimeout(() => {jarvisSpeech(text, 0.6, 0.2, 1, 'en')}, 3000)
     }
 
     // Questions
@@ -163,7 +217,7 @@ async function jarvisRecognition(lowerSentence) {
             "No problems, sir!",
             "At your service!",
             "I am here to help!",
-            "Sir!",
+            "Anytime",
             "Sure, anytime!",
             "You are welcome!"
         ]
@@ -206,6 +260,7 @@ async function jarvisRecognition(lowerSentence) {
         jarvisSpeech(text, 0.8, 0.2, 1, 'en')
     }
 
+    speech.innerText = text
     // https://www.regextester.com/15 Regex website test
 }
 
@@ -220,5 +275,14 @@ function jarvisSpeech(text, rate, pitch, volume, lang) {
 
     setTimeout(() => {speechSynthesis.speak(utterance)}, 500)
 }
+
+submitBtn.addEventListener("click", (e) => {
+    e.preventDefault()
+
+    jarvisRecognition(talkText.value.toLowerCase().replaceAll(botName[0].toLowerCase(), ""))
+    talkText.value = ""
+
+    setTimeout(checkSpeechSynthesis(0), 800)
+})
 
 addEventListener('beforeunload', () => {speechSynthesis.cancel()})

@@ -22,5 +22,7 @@ const convertCurrency = async (value, from, to) => {
 
         text = "The converted value is " + value + " " + to
         jarvisSpeech(text, 0.8, 0.2, 1, 'en')
+
+        speech.innerText = text
     }, 2000)
 }

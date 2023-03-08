@@ -33,8 +33,6 @@ recognition.addEventListener('result', async function (e) {
     let lowerSentence = sentence.toLowerCase()
     
     speech.innerText = lowerSentence.replace(botName[0].toLowerCase(), botName[1])
-    // let reg = new RegExp(botName[0], "ig");
-    // speech.innerText = sentence.replace(reg, botName[1])
 
     if (jarvis == true) {
         jarvis = false
